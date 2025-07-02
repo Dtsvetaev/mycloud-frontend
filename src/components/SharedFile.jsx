@@ -6,13 +6,16 @@ const SharedFile = () => {
   const [fileData, setFileData] = useState(null);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/api/files/shared/${uuid}/`)
+    fetch(`/api/files/shared/${uuid}/`)
       .then((res) => res.json())
       .then((data) => setFileData(data))
       .catch(() => alert('Ошибка загрузки файла по ссылке'));
   }, [uuid]);
 
   if (!fileData) return <p>Загрузка...</p>;
+
+  // Абсолютный путь к файлу:
+  const fullFileUrl = `${window.location.origin}${fileData.file}`;
 
   return (
     <div>
@@ -21,7 +24,7 @@ const SharedFile = () => {
       <p>Размер: {fileData.size} байт</p>
       <p>Загружен: {new Date(fileData.upload_date).toLocaleString()}</p>
       <a
-        href={`http://127.0.0.1:8000${fileData.file}`}
+        href={fullFileUrl}
         download={fileData.original_name}
         target="_blank"
         rel="noreferrer"
@@ -33,3 +36,5 @@ const SharedFile = () => {
 };
 
 export default SharedFile;
+
+

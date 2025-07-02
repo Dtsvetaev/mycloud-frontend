@@ -20,7 +20,7 @@ const Files = () => {
 
   const fetchFiles = async () => {
     const token = getToken();
-    const response = await fetch('http://127.0.0.1:8000/api/files/', {
+    const response = await fetch('/api/files/', {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -47,8 +47,7 @@ const Files = () => {
     formData.append('comment', comment);
 
     const token = getToken();
-
-    const response = await fetch('http://127.0.0.1:8000/api/files/', {
+    const response = await fetch('/api/files/', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
@@ -67,35 +66,32 @@ const Files = () => {
     }
   };
 
- const handleDownload = async (id) => {
-  const token = localStorage.getItem('access');
-  const response = await fetch(`http://127.0.0.1:8000/api/files/${id}/download/`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const handleDownload = async (id) => {
+    const token = localStorage.getItem('access');
+    const response = await fetch(`/api/files/${id}/download/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  if (response.ok) {
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', '');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } else {
-    alert('Ошибка при скачивании файла');
-  }
-};
-
-
-
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', '');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      alert('Ошибка при скачивании файла');
+    }
+  };
 
   const handleDelete = async (id) => {
     const confirmed = window.confirm('Вы уверены, что хотите удалить файл?');
     if (!confirmed) return;
 
     const token = getToken();
-    const response = await fetch(`http://127.0.0.1:8000/api/files/${id}/`, {
+    const response = await fetch(`/api/files/${id}/`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -111,7 +107,7 @@ const Files = () => {
 
   const handleUpdate = async (id, newName, newComment) => {
     const token = getToken();
-    const response = await fetch(`http://127.0.0.1:8000/api/files/${id}/`, {
+    const response = await fetch(`/api/files/${id}/`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -130,15 +126,32 @@ const Files = () => {
   };
 
   const handleCopyLink = (uuid) => {
-    const link = `http://127.0.0.1:8000/api/files/shared/${uuid}/`;
-    navigator.clipboard.writeText(link);
-    alert('Ссылка скопирована в буфер обмена');
+    const link = `${window.location.origin}/api/files/shared/${uuid}/`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        alert('Ссылка скопирована в буфер обмена');
+      }).catch(() => {
+        fallbackCopy(link);
+      });
+    } else {
+      fallbackCopy(link);
+    }
+  };
+
+  const fallbackCopy = (text) => {
+    const tempInput = document.createElement('input');
+    tempInput.value = text;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+    alert('Ссылка скопирована в буфер обмена (резервный способ)');
   };
 
   return (
     <div>
       <h2>Список файлов</h2>
-
       <form onSubmit={handleUpload}>
         <input type="file" onChange={(e) => setFile(e.target.files[0])} required />
         <br />
@@ -151,25 +164,20 @@ const Files = () => {
         <br />
         <button type="submit">Загрузить</button>
       </form>
-
       <ul>
         {files.map((f) => (
           <li key={f.id} style={{ marginTop: '1em' }}>
             <strong>{f.original_name || f.file}</strong> ({f.size} байт)
-            <br />
-            Комментарий: {f.comment || '—'}
-            <br />
-            <button onClick={() => handleDownload(f.id, f.original_name)}>📥 Скачать</button>{' '}
+            <br />Комментарий: {f.comment || '—'}<br />
+            <button onClick={() => handleDownload(f.id)}>📥 Скачать</button>{' '}
             <button onClick={() => handleDelete(f.id)}>🗑 Удалить</button>{' '}
-            <button
-              onClick={() => {
-                const newName = prompt('Новое имя файла:', f.original_name);
-                const newComment = prompt('Новый комментарий:', f.comment);
-                if (newName !== null && newComment !== null) {
-                  handleUpdate(f.id, newName, newComment);
-                }
-              }}
-            >
+            <button onClick={() => {
+              const newName = prompt('Новое имя файла:', f.original_name);
+              const newComment = prompt('Новый комментарий:', f.comment);
+              if (newName !== null && newComment !== null) {
+                handleUpdate(f.id, newName, newComment);
+              }
+            }}>
               ✏️ Изменить
             </button>{' '}
             <button onClick={() => handleCopyLink(f.special_link)}>🔗 Копировать ссылку</button>
@@ -181,10 +189,6 @@ const Files = () => {
 };
 
 export default Files;
-
-
-
-
 
 
 

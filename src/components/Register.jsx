@@ -5,12 +5,12 @@ const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState(null);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    const response = await fetch('http://127.0.0.1:8000/api/register/', {
+    const response = await fetch('/api/register/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -22,9 +22,7 @@ const Register = () => {
 
     if (response.ok) {
       setMessage('Регистрация успешна! Перенаправление на вход...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000); // ждём 2 секунды и переходим на страницу входа
+      setTimeout(() => navigate('/login'), 2000);
     } else {
       setMessage(data.error || 'Ошибка регистрации');
     }
@@ -56,6 +54,7 @@ const Register = () => {
 };
 
 export default Register;
+
 
 
 
