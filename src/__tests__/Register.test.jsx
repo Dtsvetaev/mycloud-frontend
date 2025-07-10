@@ -1,7 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import Register from '../components/Register';
+import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
+import store from '../store';
+import Register from '../components/Register';
 
 global.fetch = jest.fn();
 
@@ -10,16 +12,18 @@ describe('Register Component', () => {
     fetch.mockClear();
   });
 
-  test('успешная регистрация показывает сообщение и редиректит', async () => {
+  test('успешная регистрация показывает сообщение', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({}),
     });
 
     render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
+      <Provider store={store}>
+        <MemoryRouter>
+          <Register />
+        </MemoryRouter>
+      </Provider>
     );
 
     fireEvent.change(screen.getByPlaceholderText(/имя пользователя/i), {
@@ -27,40 +31,38 @@ describe('Register Component', () => {
     });
 
     fireEvent.change(screen.getByPlaceholderText(/пароль/i), {
-      target: { value: 'newpass' },
+      target: { value: 'newpassword' },
     });
 
     fireEvent.click(screen.getByRole('button', { name: /зарегистрироваться/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/регистрация успешна/i)).toBeInTheDocument();
-    });
+    expect(await screen.findByText(/регистрация успешна/i)).toBeInTheDocument();
   });
 
-  test('ошибка регистрации выводится пользователю', async () => {
+  test('ошибка регистрации отображается', async () => {
     fetch.mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ error: 'Имя уже занято' }),
+      json: async () => ({ username: ['Имя уже занято'] }),
     });
 
     render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
+      <Provider store={store}>
+        <MemoryRouter>
+          <Register />
+        </MemoryRouter>
+      </Provider>
     );
 
     fireEvent.change(screen.getByPlaceholderText(/имя пользователя/i), {
-      target: { value: 'existing' },
+      target: { value: 'existinguser' },
     });
 
     fireEvent.change(screen.getByPlaceholderText(/пароль/i), {
-      target: { value: '123456' },
+      target: { value: '12345678' },
     });
 
     fireEvent.click(screen.getByRole('button', { name: /зарегистрироваться/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/имя уже занято/i)).toBeInTheDocument();
-    });
+    expect(await screen.findByText(/имя уже занято/i)).toBeInTheDocument();
   });
 });

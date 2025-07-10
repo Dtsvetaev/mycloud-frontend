@@ -1,38 +1,54 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 
 const Upload = () => {
   const [file, setFile] = useState(null);
   const [comment, setComment] = useState('');
+  const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
+
+  const access = useSelector((state) => state.auth.access);
 
   const handleUpload = async (e) => {
     e.preventDefault();
+    setMessage(null);
+    setError(null);
+
+    if (!file) return setError('Выберите файл для загрузки');
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('comment', comment);
 
-    const token = localStorage.getItem('access');
+    try {
+      const response = await fetch('/api/files/', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${access}`,
+        },
+        body: formData,
+      });
 
-    const response = await fetch('/api/files/', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    if (response.ok) {
-      alert('Файл успешно загружен!');
-    } else {
-      alert('Ошибка загрузки файла');
+      if (response.ok) {
+        setMessage('Файл успешно загружен!');
+        setFile(null);
+        setComment('');
+      } else {
+        const data = await response.json();
+        setError(data.detail || data.file || 'Ошибка при загрузке файла');
+      }
+    } catch (err) {
+      setError('Ошибка сети. Повторите попытку позже.');
     }
   };
 
   return (
-    <form onSubmit={handleUpload} role="form">
+    <form onSubmit={handleUpload}>
       <h3>Загрузка файла</h3>
+      {message && <p style={{ color: 'green' }}>{message}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       <input
         type="file"
-        data-testid="file-input"
         onChange={(e) => setFile(e.target.files[0])}
         required
       />
@@ -50,6 +66,3 @@ const Upload = () => {
 };
 
 export default Upload;
-
-
-

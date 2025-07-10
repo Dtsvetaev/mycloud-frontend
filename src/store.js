@@ -1,21 +1,12 @@
-import { createStore } from 'redux';
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './slices/authSlice';
+import fileReducer from './slices/fileSlice';
 
-const initialState = {
-  user: null,
-  token: null,
-};
-
-function reducer(state = initialState, action) {
-  switch (action.type) {
-    case 'LOGIN':
-      return { ...state, user: action.payload.user, token: action.payload.token };
-    case 'LOGOUT':
-      return { user: null, token: null };
-    default:
-      return state;
-  }
-}
-
-const store = createStore(reducer);
+const store = configureStore({
+  reducer: {
+    auth: authReducer,
+    files: fileReducer,
+  },
+});
 
 export default store;

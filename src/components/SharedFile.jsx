@@ -4,37 +4,51 @@ import { useParams } from 'react-router-dom';
 const SharedFile = () => {
   const { uuid } = useParams();
   const [fileData, setFileData] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(`/api/files/shared/${uuid}/`)
-      .then((res) => res.json())
-      .then((data) => setFileData(data))
-      .catch(() => alert('Ошибка загрузки файла по ссылке'));
+    const fetchShared = async () => {
+      try {
+        const response = await fetch(`/api/files/shared/${uuid}/`);
+        if (!response.ok) {
+          throw new Error('Ошибка при получении файла');
+        }
+        const blob = await response.blob();
+        const contentDisposition = response.headers.get('Content-Disposition');
+        const filenameMatch = contentDisposition?.match(/filename="?(.+)"?/);
+        const filename = filenameMatch ? decodeURIComponent(filenameMatch[1]) : 'downloaded-file';
+
+        const url = window.URL.createObjectURL(blob);
+        setFileData({ url, filename });
+      } catch (err) {
+        setError(err.message || 'Не удалось загрузить файл');
+      }
+    };
+
+    fetchShared();
   }, [uuid]);
 
-  if (!fileData) return <p>Загрузка...</p>;
+  if (error) {
+    return <p style={{ color: 'red' }}>{error}</p>;
+  }
 
-  // Абсолютный путь к файлу:
-  const fullFileUrl = `${window.location.origin}${fileData.file}`;
+  if (!fileData) {
+    return <p>Загрузка...</p>;
+  }
 
   return (
     <div>
-      <h2>Файл: {fileData.original_name}</h2>
-      <p>Комментарий: {fileData.comment}</p>
-      <p>Размер: {fileData.size} байт</p>
-      <p>Загружен: {new Date(fileData.upload_date).toLocaleString()}</p>
+      <h2>Скачивание файла</h2>
       <a
-        href={fullFileUrl}
-        download={fileData.original_name}
+        href={fileData.url}
+        download={fileData.filename}
         target="_blank"
         rel="noreferrer"
       >
-        📥 Скачать файл
+        📥 Скачать файл: {fileData.filename}
       </a>
     </div>
   );
 };
 
 export default SharedFile;
-
-
