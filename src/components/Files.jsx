@@ -128,19 +128,32 @@ const Files = () => {
   };
 
   const handleCopyLink = (uuid) => {
+    if (!uuid) {
+      alert('Ошибка: ссылка недоступна. Попробуйте позже.');
+      return;
+    }
+
     const link = `${window.location.origin}/api/files/shared/${uuid}/`;
 
-    navigator.clipboard.writeText(link).then(() => {
-      alert('Ссылка скопирована');
-    }).catch(() => {
-      const temp = document.createElement('input');
-      temp.value = link;
-      document.body.appendChild(temp);
-      temp.select();
-      document.execCommand('copy');
-      document.body.removeChild(temp);
-      alert('Скопировано резервным способом');
-    });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        alert('Ссылка скопирована');
+      }).catch(() => {
+        fallbackCopy(link);
+      });
+    } else {
+      fallbackCopy(link);
+    }
+  };
+
+  const fallbackCopy = (text) => {
+    const temp = document.createElement('input');
+    temp.value = text;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+    alert('Скопировано резервным способом');
   };
 
   return (
